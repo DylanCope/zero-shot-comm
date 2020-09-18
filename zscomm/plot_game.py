@@ -1,7 +1,7 @@
 from .loss import (
     student_pred_matches_implied_class,
     student_pred_matches_test_class,
-    teacher_only_loss_fn,
+    teacher_test_message_is_correct,
     get_expected_student_pred,
     get_correct_teacher_msg
 )   

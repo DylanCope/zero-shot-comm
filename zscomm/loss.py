@@ -87,6 +87,13 @@ def teacher_test_message_is_correct(outputs, targets):
     return cce(correct_msg, teacher_utt)
 
 
+def protocol_diversity_loss(outputs):
+    _, history = outputs
+    messages = get_sent_messages(history)
+    protocol = get_comm_protocol(messages)
+    return tf.reduce_max(tf.reduce_sum(protocol, axis=-2), axis=-1)
+
+
 def combined_loss_function(outputs, targets):
     loss_s = student_pred_matches_implied_class(outputs, targets)
     loss_t = student_pred_matches_test_class(outputs, targets)
