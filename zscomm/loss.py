@@ -80,7 +80,7 @@ def student_pred_matches_implied_class(outputs, targets):
     return cce(expected_preds, student_preds)
 
 
-def teacher_only_loss_fn(outputs, targets):
+def teacher_test_message_is_correct(outputs, targets):
     _, history = outputs
     correct_msg = get_correct_teacher_msg(history, targets)
     teacher_utt = tf.nn.softmax(history[-1]['teacher_utterance'])
