@@ -14,14 +14,11 @@ class SyntheticTeacher:
         
         if state is not None:
             history = state
+            history.append({
+                'message_from_teacher': prev_utt,
+            })
         else:
             history = []
-            
-        if len(history) > 1:
-            # correct for mutations that may have happened
-            history[-1] = {
-                'message_from_teacher': prev_utt,
-            }
         
         if len(history) < self.num_classes:
             utt, _ = maybe_mutate_message(prev_utt,
@@ -31,11 +28,6 @@ class SyntheticTeacher:
         else:
             utt = get_correct_teacher_msg(history + [history[0]], 
                                           self.targets)
-        
-        history.append({
-            'message_from_teacher': utt, 
-        })
-        
         
         state = history
         
