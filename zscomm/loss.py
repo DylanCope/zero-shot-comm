@@ -106,6 +106,18 @@ def combined_loss_fn(outputs, targets, w=0.5):
     return w * loss_s + (1 - w) * loss_t
 
 
+def combined_loss_fn2(outputs, targets, w=0.5):
+    """
+    params:
+    outputs: outputs of a game
+    targets: list of labels for each input to the game
+    w: degree of weight on the student's loss. 
+    """
+    loss_s = student_pred_matches_implied_class(outputs, targets)
+    loss_t = teacher_test_message_is_correct(outputs, targets)
+    return w * loss_s + (1 - w) * loss_t
+
+
 def complete_loss_fn(outputs, targets):
     loss = teacher_test_message_is_correct(outputs, targets)
     loss = loss + protocol_diversity_loss(outputs)
