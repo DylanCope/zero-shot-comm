@@ -94,7 +94,20 @@ def protocol_diversity_loss(outputs):
     return tf.reduce_max(tf.reduce_sum(protocol, axis=-2), axis=-1)
 
 
-def combined_loss_function(outputs, targets):
+def combined_loss_fn(outputs, targets, w=0.5):
+    """
+    params:
+    outputs: outputs of a game
+    targets: list of labels for each input to the game
+    w: degree of weight on the student's loss. 
+    """
     loss_s = student_pred_matches_implied_class(outputs, targets)
     loss_t = student_pred_matches_test_class(outputs, targets)
-    return loss_s + loss_t
+    return w * loss_s + (1 - w) * loss_t
+
+
+def complete_loss_fn(outputs, targets):
+    loss = teacher_test_message_is_correct(outputs, targets)
+    loss = loss + protocol_diversity_loss(outputs)
+    loss = loss + student_pred_matches_implied_class(outputs, targets)
+    return loss
