@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.losses import categorical_crossentropy as cce
+from tensorflow.keras.losses import kullback_leibler_divergence as kl_divergence
 
 
 def get_sent_messages(history):
