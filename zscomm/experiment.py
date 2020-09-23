@@ -134,13 +134,13 @@ class Experiment:
         )
         mean_ground_truth_f1 = float(mean_ground_truth_f1)
         
-        mean_student_kld = tf.reduce_mean([
+        mean_student_error = tf.reduce_mean([
             tf.metrics.kld(actual, correct)
             for actual, correct in zip(preds, correct_preds)
         ])
-        mean_student_kld = float(mean_student_kld.numpy())
+        mean_student_error = float(mean_student_error.numpy())
         
-        return mean_ground_truth_f1, mean_student_kld
+        return mean_ground_truth_f1, mean_student_error
     
     def get_teacher_test_metrics(self, games_played):
         
@@ -154,12 +154,12 @@ class Experiment:
             for _, targets, (_, game_history) in games_played
         ], axis=0)
         
-        mean_teacher_kld = tf.reduce_mean([
+        mean_teacher_error = tf.reduce_mean([
             tf.metrics.kld(actual, correct)
             for actual, correct in zip(actual_teacher_test_msgs, 
                                        correct_teacher_test_msgs)
         ])
-        mean_teacher_kld = float(mean_teacher_kld.numpy())
+        mean_teacher_error = float(mean_teacher_error.numpy())
         
         return mean_teacher_kld
     
@@ -186,17 +186,17 @@ class Experiment:
             for inp, tar in test_samples
         ]
         
-        mean_ground_truth_f1, mean_student_kld = \
+        mean_ground_truth_f1, mean_student_error = \
             self.get_student_test_metrics(games_played)
         
-        mean_teacher_kld = \
+        mean_teacher_error = \
             self.get_teacher_test_metrics(games_played)
             
         test_metrics = {
             'mean_test_loss': self.get_test_loss(games_played), 
             'mean_ground_truth_f1': mean_ground_truth_f1,
-            'mean_student_kld': mean_student_kld,
-            'mean_teacher_kld': mean_teacher_kld
+            'mean_student_error': mean_student_error,
+            'mean_teacher_error': mean_teacher_error
         }
         
         return games_played, test_metrics
@@ -265,8 +265,8 @@ class Experiment:
                 print(
                     f"Test Loss: {round(metrics['mean_test_loss'], 3)},",
                     f"Ground Truth F1-Score: {round(metrics['mean_ground_truth_f1'], 3)},",
-                    f"Student Divergence: {round(metrics['mean_student_kld'], 3)},",
-                    f"Teacher Divergence: {round(metrics['mean_teacher_kld'], 3)}"
+                    f"Student Error: {round(metrics['mean_student_error'], 3)},",
+                    f"Teacher Error: {round(metrics['mean_teacher_error'], 3)}"
                 )
 
     def print_step_progress(self, step, step_mean_loss):
