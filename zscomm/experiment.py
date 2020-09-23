@@ -221,27 +221,32 @@ class Experiment:
             'loss': float(mean_loss.numpy().mean()), 
             'seconds_taken': seconds_taken
         })
+        
+    def _train_internal(self):
+        while self.epoch < self.max_epochs:
+            self.run_training_epoch()
+
+            if self.epoch % self.test_freq == 0:
+                self.print_history()
+                print('Running test games...')
+                clear_output(wait=True)
+                _, test_metrics = self.run_tests()
+                self.training_history[-1]['test_metrics'] = test_metrics
+
+            self.epoch += 1
+            self.print_history()
+            clear_output(wait=True)
     
-    def train(self):
+    def train(self, catch_interrupt=True):
         self.print_history()
         clear_output(wait=True)
-        try:
-            while self.epoch < self.max_epochs:
-                self.run_training_epoch()
-                
-                if self.epoch % self.test_freq == 0:
-                    self.print_history()
-                    print('Running test games...')
-                    clear_output(wait=True)
-                    _, test_metrics = self.run_tests()
-                    self.training_history[-1]['test_metrics'] = test_metrics
-                    
-                self.epoch += 1
-                self.print_history()
-                clear_output(wait=True)
-
-        except KeyboardInterrupt:
-            pass
+        if catch_interrupt:
+            try:
+                self._train_internal()
+            except KeyboardInterrupt:
+                pass
+        else:
+            self._train_internal()
 
         self.print_history()
         print('Training stopped.')
