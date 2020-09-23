@@ -170,6 +170,22 @@ class Experiment:
                          training=False,
                          **self.play_params)
     
+    def extract_test_metrics(self, games_played):
+        
+        mean_ground_truth_f1, mean_student_error = \
+            self.get_student_test_metrics(games_played)
+        
+        mean_teacher_error, mean_protocol_diversity = \
+            self.get_teacher_test_metrics(games_played)
+
+        return {
+            'mean_test_loss': self.get_test_loss(games_played), 
+            'mean_ground_truth_f1': mean_ground_truth_f1,
+            'mean_student_error': mean_student_error,
+            'mean_teacher_error': mean_teacher_error,
+            'mean_protocol_diversity': mean_protocol_diversity,
+        }
+        
     def run_tests(self):
         
         test_samples = [
@@ -181,46 +197,37 @@ class Experiment:
             (inp, tar, self.test_play(inp))
             for inp, tar in test_samples
         ]
-        
-        mean_ground_truth_f1, mean_student_error = \
-            self.get_student_test_metrics(games_played)
-        
-        mean_teacher_error, mean_protocol_diversity = \
-            self.get_teacher_test_metrics(games_played)
-            
-        test_metrics = {
-            'mean_test_loss': self.get_test_loss(games_played), 
-            'mean_ground_truth_f1': mean_ground_truth_f1,
-            'mean_student_error': mean_student_error,
-            'mean_teacher_error': mean_teacher_error,
-            'mean_protocol_diversity': mean_protocol_diversity,
-        }
+
+        test_metrics = self.extract_test_metrics(games_played)
         
         return games_played, test_metrics
+    
+    def run_training_epoch(self):
+        mean_loss = tf.zeros((1,))
+
+        start_time = time.time()
+        for step in range(self.steps_per_epoch):
+
+            loss = self.training_step()
+            mean_loss = (mean_loss + tf.reduce_mean(loss)) / 2.0
+
+            if step % self.step_print_freq == 0:
+                self.print_history()
+                self.print_step_progress(step, mean_loss)
+                clear_output(wait=True)
+
+        seconds_taken = time.time() - start_time
+        self.training_history.append({
+            'loss': float(mean_loss.numpy().mean()), 
+            'seconds_taken': seconds_taken
+        })
     
     def train(self):
         self.print_history()
         clear_output(wait=True)
         try:
             while self.epoch < self.max_epochs:
-                mean_loss = tf.zeros((1,))
-
-                start_time = time.time()
-                for step in range(self.steps_per_epoch):
-
-                    loss = self.training_step()
-                    mean_loss = (mean_loss + tf.reduce_mean(loss)) / 2.0
-
-                    if step % self.step_print_freq == 0:
-                        self.print_history()
-                        self.print_step_progress(step, mean_loss)
-                        clear_output(wait=True)
-
-                seconds_taken = time.time() - start_time
-                self.training_history.append({
-                    'loss': float(mean_loss.numpy().mean()), 
-                    'seconds_taken': seconds_taken
-                })
+                self.run_training_epoch()
                 
                 if self.epoch % self.test_freq == 0:
                     self.print_history()
@@ -251,6 +258,15 @@ class Experiment:
             'optimiser_config': self.optimiser_1.get_config(),
         }
     
+    def print_test_metrics(self, metrics):
+        print(
+            f"Test Loss: {round(metrics['mean_test_loss'], 3)},",
+            f"Ground Truth F1-Score: {round(metrics['mean_ground_truth_f1'], 3)},",
+            f"Student Error: {round(metrics['mean_student_error'], 3)},",
+            f"Teacher Error: {round(metrics['mean_teacher_error'], 3)},",
+            f"Protocol Diversity: {round(metrics['mean_protocol_diversity'], 3)},"
+        )
+
     def print_history(self):
         for e, item in enumerate(self.training_history):
             mins = int(item['seconds_taken']) // 60
@@ -258,16 +274,43 @@ class Experiment:
             loss = round(item['loss'], 3)
             print(f'Epoch {e}, Time Taken (mm:ss): {mins}:{secs}, Mean Loss: {loss}')
             if 'test_metrics' in item:
-                metrics = item['test_metrics']
-                print(
-                    f"Test Loss: {round(metrics['mean_test_loss'], 3)},",
-                    f"Ground Truth F1-Score: {round(metrics['mean_ground_truth_f1'], 3)},",
-                    f"Student Error: {round(metrics['mean_student_error'], 3)},",
-                    f"Teacher Error: {round(metrics['mean_teacher_error'], 3)},",
-                    f"Protocol Diversity: {round(metrics['mean_protocol_diversity'], 3)},"
-                )
+                self.print_test_metrics(item['test_metrics'])
 
     def print_step_progress(self, step, step_mean_loss):
         l = round(float(step_mean_loss.numpy().mean()), 4)
         p = round(100 * step / self.steps_per_epoch, 2)
         print(f'Epoch {self.epoch}, {p}% complete, Loss: {l}')
+        
+
+    def plot_training_history(self, axs=None):
+        if axs is None:
+            fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+            ax = axs[0]
+            ax.set_title('Loss History')
+            ax = axs[1]
+            ax.set_title('Test Metrics History')
+
+        ax = axs[0]
+        sns.lineplot(x=range(len(self.training_history)), 
+                     y=[item['loss'] for item in self.training_history],
+                     label='train_loss_exp_1',
+                     ax=ax);
+
+        test_metric_items = [
+            item['test_metrics'] 
+            for item in self.training_history
+            if 'test_metrics' in item
+        ]
+        epochs = [
+            epoch * exp.test_freq 
+            for epoch, item in enumerate(test_metric_items)
+        ]
+        metrics = list(test_metric_items[0].keys())
+
+        for metric in metrics:
+            ax = axs[1] if metric != 'mean_test_loss' else axs[0]
+            sns.lineplot(x=epochs, 
+                         y=[item[metric] for item in test_metric_items],
+                         label=f'{metric}_exp_{i}',
+                         ax=ax)
+        return axs
