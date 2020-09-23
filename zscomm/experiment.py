@@ -135,33 +135,29 @@ class Experiment:
         mean_ground_truth_f1 = float(mean_ground_truth_f1)
         
         mean_student_error = tf.reduce_mean([
-            tf.metrics.kld(actual, correct)
-            for actual, correct in zip(preds, correct_preds)
+            student_pred_matches_implied_class(outputs, targets)
+            for _, targets, outputs in games_played
         ])
-        mean_student_error = float(mean_student_error.numpy())
+        mean_student_error = float(mean_student_error.numpy().mean())
         
         return mean_ground_truth_f1, mean_student_error
     
     def get_teacher_test_metrics(self, games_played):
         
-        correct_teacher_test_msgs = tf.concat([
-            get_correct_teacher_msg(game_history, targets)
-            for _, targets, (_, game_history) in games_played
-        ], axis=0)
-        
-        actual_teacher_test_msgs = tf.concat([
-            game_history[-1]['message_from_teacher']
-            for _, targets, (_, game_history) in games_played
-        ], axis=0)
-        
         mean_teacher_error = tf.reduce_mean([
-            tf.metrics.kld(actual, correct)
-            for actual, correct in zip(actual_teacher_test_msgs, 
-                                       correct_teacher_test_msgs)
+            teacher_test_message_is_correct(outputs, targets)
+            for _, targets, outputs in games_played
         ])
-        mean_teacher_error = float(mean_teacher_error.numpy())
+        mean_teacher_error = float(mean_teacher_error.numpy().mean())
         
-        return mean_teacher_kld
+        mean_protocol_diversity = tf.reduce_mean([
+            protocol_diversity_loss(outputs)**-1
+            for _, targets, outputs in games_played
+        ])
+        mean_protocol_diversity = \
+            float(mean_protocol_diversity.numpy().mean())
+        
+        return mean_teacher_error, mean_protocol_diversity 
     
     def test_play(self, inputs):
         
@@ -189,14 +185,15 @@ class Experiment:
         mean_ground_truth_f1, mean_student_error = \
             self.get_student_test_metrics(games_played)
         
-        mean_teacher_error = \
+        mean_teacher_error, mean_protocol_diversity = \
             self.get_teacher_test_metrics(games_played)
             
         test_metrics = {
             'mean_test_loss': self.get_test_loss(games_played), 
             'mean_ground_truth_f1': mean_ground_truth_f1,
             'mean_student_error': mean_student_error,
-            'mean_teacher_error': mean_teacher_error
+            'mean_teacher_error': mean_teacher_error,
+            'mean_protocol_diversity': mean_protocol_diversity,
         }
         
         return games_played, test_metrics
@@ -266,7 +263,8 @@ class Experiment:
                     f"Test Loss: {round(metrics['mean_test_loss'], 3)},",
                     f"Ground Truth F1-Score: {round(metrics['mean_ground_truth_f1'], 3)},",
                     f"Student Error: {round(metrics['mean_student_error'], 3)},",
-                    f"Teacher Error: {round(metrics['mean_teacher_error'], 3)}"
+                    f"Teacher Error: {round(metrics['mean_teacher_error'], 3)},",
+                    f"Protocol Diversity: {round(metrics['mean_protocol_diversity'], 3)},"
                 )
 
     def print_step_progress(self, step, step_mean_loss):
