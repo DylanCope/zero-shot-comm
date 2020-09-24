@@ -55,6 +55,8 @@ class Experiment:
         self.student_loss_fn = student_loss_fn or loss_fn
         self.teacher_loss_fn = teacher_loss_fn or loss_fn
         
+        self.results = None
+        
     def get_trainable_variables(self):
         if self.student is not None and self.teacher is None:
             return self.student.trainable_variables
@@ -222,20 +224,26 @@ class Experiment:
             'seconds_taken': seconds_taken
         })
         
+    def _test_step(self):
+        self.print_history()
+        print('Running test games...')
+        clear_output(wait=True)
+        _, test_metrics = self.run_tests()
+        self.training_history[-1]['test_metrics'] = test_metrics
+        return test_metrics
+        
     def _run_internal(self):
         while self.epoch < self.max_epochs:
             self.run_training_epoch()
 
             if self.epoch % self.test_freq == 0:
-                self.print_history()
-                print('Running test games...')
-                clear_output(wait=True)
-                _, test_metrics = self.run_tests()
-                self.training_history[-1]['test_metrics'] = test_metrics
+                self._test_step()
 
             self.epoch += 1
             self.print_history()
             clear_output(wait=True)
+
+        self.results = self._test_step()
     
     def run(self, catch_interrupt=True):
         self.print_history()
@@ -271,6 +279,9 @@ class Experiment:
             f"Teacher Error: {round(metrics['mean_teacher_error'], 3)},",
             f"Protocol Diversity: {round(metrics['mean_protocol_diversity'], 3)},"
         )
+    
+    def print_results(self):
+        self.print_test_metrics(self.results)
 
     def print_history(self):
         for e, item in enumerate(self.training_history):
@@ -286,7 +297,6 @@ class Experiment:
         p = round(100 * step / self.steps_per_epoch, 2)
         print(f'Epoch {self.epoch}, {p}% complete, Loss: {l}')
         
-
     def plot_training_history(self, axs=None):
         if axs is None:
             fig, axs = plt.subplots(1, 2, figsize=(15, 5))
