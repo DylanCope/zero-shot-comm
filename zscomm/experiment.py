@@ -222,7 +222,7 @@ class Experiment:
             'seconds_taken': seconds_taken
         })
         
-    def _train_internal(self):
+    def _run_internal(self):
         while self.epoch < self.max_epochs:
             self.run_training_epoch()
 
@@ -237,16 +237,16 @@ class Experiment:
             self.print_history()
             clear_output(wait=True)
     
-    def train(self, catch_interrupt=True):
+    def run(self, catch_interrupt=True):
         self.print_history()
         clear_output(wait=True)
         if catch_interrupt:
             try:
-                self._train_internal()
+                self._run_internal()
             except KeyboardInterrupt:
                 pass
         else:
-            self._train_internal()
+            self._run_internal()
 
         self.print_history()
         print('Training stopped.')
