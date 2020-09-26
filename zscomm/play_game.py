@@ -169,6 +169,9 @@ def play_game(
 
     message_from_teacher = comm_channel(teacher_utterance,
                                         training=training)
+    if message_permutation:
+        message_from_teacher = apply_permutation(permutation_map, 
+                                                 message_from_teacher)
 
     if stop_gradients_on_final_message or stop_gradients_on_all_comm:
         message_from_teacher = tf.stop_gradient(message_from_teacher)
