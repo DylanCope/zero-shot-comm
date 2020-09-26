@@ -2,6 +2,10 @@ from IPython.display import clear_output
 import unittest.mock as mock
 import time
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import numpy as np
 from sklearn.metrics import f1_score
 import tensorflow as tf
 
@@ -29,6 +33,8 @@ class Experiment:
         test_freq=5,
         test_steps=25,
         lr=1e-2, # learning rate
+        print_prehistory=None,
+        name='experiment'
     ):
         self.generate_train_batch = train_data_gen_fn
         self.generate_test_batch = test_data_gen_fn
@@ -54,6 +60,9 @@ class Experiment:
                                    (teacher_loss_fn is not None)
         self.student_loss_fn = student_loss_fn or loss_fn
         self.teacher_loss_fn = teacher_loss_fn or loss_fn
+        
+        self.print_prehistory = print_prehistory or (lambda: None)
+        self.name = name
         
         self.results = None
         
@@ -260,7 +269,12 @@ class Experiment:
         print('Training stopped.')
     
     def get_config(self):
+        optimiser_config = {
+            k: v if not isinstance(v, np.float32) else float(v)
+            for k, v in self.optimiser_1.get_config().items()
+        }
         return {
+            'name': self.name,
             'max_epochs': self.max_epochs,
             'steps_per_epoch': self.steps_per_epoch,
             'epochs_optimised': self.epoch,
@@ -268,7 +282,7 @@ class Experiment:
             'play_params': self.play_params,
             'test_freq': self.test_freq,
             'test_steps': self.test_steps,
-            'optimiser_config': self.optimiser_1.get_config(),
+            'optimiser_config': optimiser_config,
         }
     
     def print_test_metrics(self, metrics):
@@ -284,6 +298,9 @@ class Experiment:
         self.print_test_metrics(self.results)
 
     def print_history(self):
+        self.print_prehistory()
+        print(f'Running {self.name}...')
+        print('Run config:\n', self.get_config())
         for e, item in enumerate(self.training_history):
             mins = int(item['seconds_taken']) // 60
             secs = int(item['seconds_taken']) % 60
@@ -317,7 +334,7 @@ class Experiment:
             if 'test_metrics' in item
         ]
         epochs = [
-            epoch * exp.test_freq 
+            epoch * self.test_freq 
             for epoch, item in enumerate(test_metric_items)
         ]
         metrics = list(test_metric_items[0].keys())
@@ -326,6 +343,6 @@ class Experiment:
             ax = axs[1] if metric != 'mean_test_loss' else axs[0]
             sns.lineplot(x=epochs, 
                          y=[item[metric] for item in test_metric_items],
-                         label=f'{metric}_exp_{i}',
+                         label=f'{metric}_{self.name}',
                          ax=ax)
         return axs

@@ -6,10 +6,14 @@ import tensorflow as tf
 
 
 def maybe_mutate_message(
-    message, channel_size, history, p_mutate, 
-    training=False
+    message, history, p_mutate, 
+    is_kind=True, training=False
 ):
     batch_size = tf.shape(message)[0]
+    channel_size = tf.shape(message)[1]
+        
+    if not is_kind:
+        history = []
 
     if history == []:
         history = [{'message_from_teacher': tf.zeros_like(message)}]
@@ -27,16 +31,17 @@ def maybe_mutate_message(
     possible_utts = tf.repeat(possible_utts, len(history), axis=0)
     possible_utts = tf.repeat([possible_utts], batch_size, axis=0)
 
-    idx = possible_utts != tf.reshape(tf.repeat(prev_utts, 5, axis=-1), 
+    idx = possible_utts != tf.reshape(tf.repeat(prev_utts, channel_size, axis=-1), 
                                       possible_utts.shape)
     idx = tf.reduce_sum(tf.cast(idx, tf.int64), axis=-2) == len(history)
     num_remaining_utts = channel_size - len(history)
 
     noise = tf.random.uniform(idx.shape) * tf.cast(idx, tf.float32)
-    noise_max = tf.reduce_max(noise, axis=-1)
-    random_choice = noise == tf.reshape(noise_max, (batch_size, 1))
-
-    possible_mutations = possible_utts[:, 0, :][random_choice]
+    random_choice = tf.repeat(tf.argmax(noise, axis=1), channel_size)
+    random_choice = tf.reshape(random_choice, (batch_size, channel_size))
+    random_choice_idx = random_choice == possible_utts[:, 0, :]
+    
+    possible_mutations = possible_utts[:, 0, :][random_choice_idx]
     possible_mutations = tf.one_hot(possible_mutations, channel_size)
     possible_mutations = tf.stop_gradient(possible_mutations)
 
@@ -44,14 +49,15 @@ def maybe_mutate_message(
     mask = tf.cast(rand_samples < p_mutate, tf.float32)
 
     mutated_message = mask * possible_mutations + (1 - mask) * message
-    
+
     return mutated_message, mask
     
     
 def play_game(
     inputs, teacher, student, 
     comm_channel=None, 
-    p_mutate=0.5, 
+    p_mutate=0.5,
+    kind_mutations=True,
     channel_size=5,
     channel_temp=1,
     channel_noise=0.5,
@@ -96,9 +102,10 @@ def play_game(
                                                 training=training)
             message_from_teacher, mutations = \
                 maybe_mutate_message(message_from_teacher, 
-                                     comm_channel.size,
+#                                      comm_channel.size,
                                      history,
                                      p_mutate,
+                                     is_kind=kind_mutations,
                                      training=training)
                      
             if stop_gradients_on_all_comm:

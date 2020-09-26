@@ -1,10 +1,11 @@
+import numpy as np
 import tensorflow as tf
 
 
 def make_map(label, message, num_classes):
     *_, msg_size = tf.shape(message)
     lm_map_shape = (num_classes, msg_size)
-    class_indices = [i for i, _ in enumerate(class_labels)]
+    class_indices = list(range(num_classes))
     indices = tf.reshape(tf.repeat(class_indices, msg_size), 
                          lm_map_shape)
     indices = tf.cast(indices, tf.int64) == label

@@ -18,7 +18,9 @@ def plot_game(inputs, outputs, targets,
               select_batch=0, 
               class_labels=None,
               show_utterances=True,
-              use_mnist=False):
+              use_mnist=False,
+              fig_width=3,
+              fig_height=5):
     """
     Assuming that there is a batch of games, this will only plot
     the first one in the batch
@@ -42,8 +44,8 @@ def plot_game(inputs, outputs, targets,
         k = 1.5
         fig = plt.figure(
             figsize=(
-                int(k*(num_classes+1)), 
-                int(k*(chan_size+2))
+                int(k*(fig_width+1)), 
+                int(k*(fig_height+2))
             )
         )
         n_rows = len(history) + 1
