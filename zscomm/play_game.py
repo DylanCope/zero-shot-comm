@@ -1,6 +1,8 @@
 from .agent import Agent
 from .comm_channel import CommChannel
 
+import random
+
 import numpy as np
 import tensorflow as tf
 
@@ -51,6 +53,27 @@ def maybe_mutate_message(
     mutated_message = mask * possible_mutations + (1 - mask) * message
 
     return mutated_message, mask
+
+
+def create_permutation_map(batch_size, channel_size):
+
+    indices_col = []
+    for i in range(batch_size):
+        idxs = list(range(channel_size))
+        random.shuffle(idxs)
+        indices_col.append(idxs)
+    indices_col = tf.convert_to_tensor(indices_col)
+
+    indices_row = tf.repeat([list(range(batch_size))], channel_size, axis=0)
+    indices_row = tf.transpose(indices_row)
+    
+    permutation_map = tf.stack([indices_row, indices_col], axis=-1)
+    
+    return permutation_map
+
+
+def apply_permutation(permutation_map, message):
+    return tf.gather_nd(message, permutation_map)
     
     
 def play_game(
@@ -58,6 +81,7 @@ def play_game(
     comm_channel=None, 
     p_mutate=0.5,
     kind_mutations=True,
+    message_permutation=False,
     channel_size=5,
     channel_temp=1,
     channel_noise=0.5,
@@ -74,6 +98,12 @@ def play_game(
 
     num_inputs = tf.shape(inputs)[0]
     batch_size = tf.shape(inputs)[1]
+    
+    if message_permutation:
+        permutation_map = create_permutation_map(batch_size, 
+                                                 comm_channel.size)
+    else:
+        permutation_map = None
 
     no_inp = tf.zeros_like(inputs[0])
     silence = comm_channel.get_initial_state(batch_size)
@@ -107,6 +137,10 @@ def play_game(
                                      p_mutate,
                                      is_kind=kind_mutations,
                                      training=training)
+            
+            if message_permutation:
+                message_from_teacher = apply_permutation(permutation_map, 
+                                                         message_from_teacher)
                      
             if stop_gradients_on_all_comm:
                 message_from_teacher = tf.stop_gradient(message_from_teacher)
@@ -123,7 +157,8 @@ def play_game(
             history.append({
                 'teacher_utterance': teacher_utterance,
                 'message_from_teacher': message_from_teacher, 
-                'message_mutations': mutations
+                'message_mutations': mutations,
+                'permutation_map': permutation_map
             })
             teacher_prev_msg = message_from_teacher
 
