@@ -89,6 +89,7 @@ def play_game(
     stop_gradients_on_final_message=False,
     stop_gradients_on_all_comm=False,
     no_protocol_establishment=False,
+    teacher_sees_their_prev_msg=True,
     training=False,
 ):
     comm_channel = comm_channel or \
@@ -118,11 +119,13 @@ def play_game(
         for i in range(num_inputs - 1):
             inp = inputs[i]
             
-            if access_to_inputs_in_first_phase:
-                teacher_inputs = (inp, teacher_prev_msg, silence)
-            else:
-                teacher_inputs = (no_inp, teacher_prev_msg, silence)
-
+            
+            inp_t = inp \
+                if access_to_inputs_in_first_phase else no_inp
+            prev_msg_t = teacher_prev_msg \
+                if teacher_sees_their_prev_msg else silence
+            
+            teacher_inputs = (inp_t, prev_msg_t, silence)
             
             teacher_utterance, _, teacher_state = teacher(
                 teacher_inputs, state=teacher_state, training=training
@@ -162,7 +165,10 @@ def play_game(
             })
             teacher_prev_msg = message_from_teacher
 
-    teacher_inputs = (inputs[-1], teacher_prev_msg, silence)
+    prev_msg_t = teacher_prev_msg \
+        if teacher_sees_their_prev_msg else silence
+    teacher_inputs = (inputs[-1], prev_msg_t, silence)
+    
     teacher_utterance, _, _ = teacher(
         teacher_inputs, state=teacher_state, training=training
     )
