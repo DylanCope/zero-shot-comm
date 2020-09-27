@@ -28,13 +28,13 @@ class Agent(tf.keras.Model):
             tf.keras.layers.Lambda(lambda x: x)
         
         self.dense1 = tf.keras.layers.Dense(
-            dense_dim, activation=output_activation
+            dense_dim, activation='relu'
         )
         
         self.lstm = tf.keras.layers.LSTM(
             units=lstm_units,
             return_state=True,
-            dropout=0.5,
+            dropout=dropout_prob,
         )
 
         self.unknown_class = unknown_class
