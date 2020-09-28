@@ -1,4 +1,4 @@
-# Intraepisodic Emergent Communication for Zero-shot Cooperation - Codebase
+# Investigating Zero-Shot Communication
 
 ## Installation
 
