@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import numpy as np
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, accuracy_score
 import tensorflow as tf
 
 from .synth_teacher import SyntheticTeacher
@@ -145,13 +145,22 @@ class Experiment:
         )
         mean_ground_truth_f1 = float(mean_ground_truth_f1)
         
+        ground_truth_acc = accuracy_score(
+            ground_truth_labels.numpy(), preds.numpy(),
+        )
+        ground_truth_acc = float(ground_truth_acc)
+        
         mean_student_error = tf.reduce_mean([
             student_pred_matches_implied_class(outputs, targets)
             for _, targets, outputs in games_played
         ])
         mean_student_error = float(mean_student_error.numpy().mean())
         
-        return mean_ground_truth_f1, mean_student_error
+        return {
+            'mean_ground_truth_f1': mean_ground_truth_f1,
+            'ground_truth_acc': ground_truth_acc,
+            'mean_student_error': mean_student_error,
+        }
     
     def get_teacher_test_metrics(self, games_played):
         
@@ -168,7 +177,23 @@ class Experiment:
         mean_protocol_diversity = \
             float(mean_protocol_diversity.numpy().mean())
         
-        return mean_teacher_error, mean_protocol_diversity 
+        return {
+            'mean_teacher_error': mean_teacher_error,
+            'mean_protocol_diversity': mean_protocol_diversity,
+        }
+    
+    def extract_test_metrics(self, games_played):
+        
+        student_metrics = \
+            self.get_student_test_metrics(games_played)
+        
+        teacher_metrics = \
+            self.get_teacher_test_metrics(games_played)
+
+        return {
+            'mean_test_loss': self.get_test_loss(games_played), 
+            **student_metrics, **teacher_metrics
+        }
     
     def test_play(self, inputs):
         
@@ -180,22 +205,6 @@ class Experiment:
         return play_game(inputs, teacher, student, 
                          training=False,
                          **self.play_params)
-    
-    def extract_test_metrics(self, games_played):
-        
-        mean_ground_truth_f1, mean_student_error = \
-            self.get_student_test_metrics(games_played)
-        
-        mean_teacher_error, mean_protocol_diversity = \
-            self.get_teacher_test_metrics(games_played)
-
-        return {
-            'mean_test_loss': self.get_test_loss(games_played), 
-            'mean_ground_truth_f1': mean_ground_truth_f1,
-            'mean_student_error': mean_student_error,
-            'mean_teacher_error': mean_teacher_error,
-            'mean_protocol_diversity': mean_protocol_diversity,
-        }
         
     def run_tests(self):
         
