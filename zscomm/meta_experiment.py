@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import uuid
 
+from .play_game import play_game
+
 
 def test_game(teacher, student, generate_test_batch, num_tests=5):
     games_played = []
@@ -42,7 +44,6 @@ def export_experiment(experiment, location):
     
 def measure_zero_shot_coordination(experiment_1,
                                    experiment_2,
-                                   generate_test_batch,
                                    num_tests=5):
     
     results = []
