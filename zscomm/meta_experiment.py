@@ -5,7 +5,7 @@ from pathlib import Path
 import uuid
 
 
-def test_game(teacher, student, num_tests=5):
+def test_game(teacher, student, generate_test_batch, num_tests=5):
     games_played = []
     for _ in range(num_tests):
         inputs, targets = generate_test_batch()
@@ -42,17 +42,20 @@ def export_experiment(experiment, location):
     
 def measure_zero_shot_coordination(experiment_1,
                                    experiment_2,
+                                   generate_test_batch,
                                    num_tests=5):
     
     results = []
     games_played = test_game(experiment_1.teacher, 
                              experiment_2.student,
+                             experiment_1.generate_test_batch,
                              num_tests=num_tests)
     test_metrics = experiment_1.extract_test_metrics(games_played)
     results.append(test_metrics)
 
     games_played = test_game(experiment_2.teacher, 
                              experiment_1.student,
+                             experiment_1.generate_test_batch,
                              num_tests=num_tests)
     test_metrics = experiment_1.extract_test_metrics(games_played)
     results.append(test_metrics)

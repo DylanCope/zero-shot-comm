@@ -76,6 +76,12 @@ class Experiment:
         else:
             return self.student.trainable_variables + \
                    self.teacher.trainable_variables
+        
+    def get_play_params(self):
+        if isinstance(self.play_params, dict):
+            return self.play_params
+        # otherwise assume play_params is a function
+        return self.play_params(self.epoch)
 
     def training_step(self):
         inputs, targets = self.generate_train_batch()
@@ -90,7 +96,7 @@ class Experiment:
             outputs = play_game(
                 inputs, teacher, student, 
                 training=True, 
-                **self.play_params
+                **self.get_play_params()
             )
 
             if self.optimise_separately:
@@ -204,7 +210,7 @@ class Experiment:
         
         return play_game(inputs, teacher, student, 
                          training=False,
-                         **self.play_params)
+                         **self.get_play_params())
         
     def run_tests(self):
         
@@ -223,13 +229,16 @@ class Experiment:
         return games_played, test_metrics
     
     def run_training_epoch(self):
-        mean_loss = tf.zeros((1,))
+        mean_loss = None
 
         start_time = time.time()
         for step in range(self.steps_per_epoch):
 
             loss = self.training_step()
-            mean_loss = (mean_loss + tf.reduce_mean(loss)) / 2.0
+            if mean_loss is None:
+                mean_loss = tf.reduce_mean(loss)
+            else:
+                mean_loss = (mean_loss + tf.reduce_mean(loss)) / 2.0
 
             if step % self.step_print_freq == 0:
                 self.print_history()
@@ -239,7 +248,8 @@ class Experiment:
         seconds_taken = time.time() - start_time
         self.training_history.append({
             'loss': float(mean_loss.numpy().mean()), 
-            'seconds_taken': seconds_taken
+            'seconds_taken': seconds_taken,
+            'experiment_state': self.get_config()
         })
         
     def _test_step(self):
@@ -282,16 +292,26 @@ class Experiment:
             k: v if not isinstance(v, np.float32) else float(v)
             for k, v in self.optimiser_1.get_config().items()
         }
+        if self.optimise_separately:
+            loss_config = {
+                'teacher_loss_fn': self.teacher_loss_fn.__name__,
+                'student_loss_fn': self.student_loss_fn.__name__,
+            }
+        else:
+            loss_config = {
+                'loss_fn': self.loss_fn.__name__,
+            }
         return {
             'name': self.name,
             'max_epochs': self.max_epochs,
             'steps_per_epoch': self.steps_per_epoch,
             'epochs_optimised': self.epoch,
-            'loss_fn': self.loss_fn.__name__,
-            'play_params': self.play_params,
+            'play_params': self.get_play_params(),
             'test_freq': self.test_freq,
             'test_steps': self.test_steps,
             'optimiser_config': optimiser_config,
+            'optimise_agents_separately': self.optimise_separately,
+            **loss_config
         }
     
     def print_test_metrics(self, metrics):

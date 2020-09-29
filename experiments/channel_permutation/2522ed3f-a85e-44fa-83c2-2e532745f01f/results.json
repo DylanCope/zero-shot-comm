@@ -1,0 +1,1 @@
+{"mean_test_loss": 1.098329782485962, "mean_ground_truth_f1": 0.31625, "ground_truth_acc": 0.31625, "mean_student_error": 1.0923256874084473, "mean_teacher_error": 2.470271348953247, "mean_protocol_diversity": 0.4933333694934845}

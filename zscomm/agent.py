@@ -9,12 +9,11 @@ class Agent(tf.keras.Model):
         num_classes,
         name='agent',
         lstm_units=64,
-        latent_dim=64,
         dense_dim=128,
         encoder=None,
         output_activation=None,
         unknown_class=False,
-        dropout_prob=0.2,
+        dropout_prob=0,
         **kwargs
     ):
         super(Agent, self).__init__(name=name, **kwargs)
@@ -71,7 +70,7 @@ class Agent(tf.keras.Model):
                               training=training)
         self.state = state
         
-        x = self.dropout(x, training=training)
+#         x = self.dropout(x, training=training)
         
         x = self.output_layer(x, training=training)
         
