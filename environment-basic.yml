@@ -1,0 +1,29 @@
+name: zero-shot-comm
+channels:
+  - willyd
+  - defaults
+  - conda-forge
+dependencies:
+  - json5=0.9.1
+  - jsonschema=3.2.0
+  - jupyter=1.0.0=py36_7
+  - jupyter_client=5.3.4=py36_0
+  - jupyter_console=6.1.0=py_0
+  - jupyter_core=4.6.1=py36_0
+  - jupyterlab=1.2.6=pyhf63ae98_0
+  - jupyterlab_server=1.0.6=py_0
+  - jupyterthemes=0.20.0=py_1
+  - keras=2.3.1=0
+  - matplotlib==2.1.2
+  - numpy==1.18.1
+  - pandas==1.0.1
+  - pip=20.0.2
+  - python==3.6.10
+  - simplejson
+  - scikit-image==0.16.2
+  - scikit-learn==0.22.1
+  - scipy==1.4.1
+  - seaborn=0.10.0
+  - tensorflow==2.1.0
+  - pip:
+    - tensorflow-probability==0.9.0
