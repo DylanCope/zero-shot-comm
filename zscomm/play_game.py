@@ -135,7 +135,6 @@ def play_game(
                                                 training=training)
             message_from_teacher, mutations = \
                 maybe_mutate_message(message_from_teacher, 
-#                                      comm_channel.size,
                                      history,
                                      p_mutate,
                                      is_kind=kind_mutations,
