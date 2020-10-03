@@ -206,7 +206,9 @@ class Experiment:
         student = self.student or \
             mock.MagicMock(return_value=(None, None, None))
         teacher = self.teacher or \
-            SyntheticTeacher(CHANNEL_SIZE, NUM_CLASSES, targets)
+            SyntheticTeacher(self.channel_size, 
+                             self.num_classes, 
+                             targets)
         
         return play_game(inputs, teacher, student, 
                          training=False,
