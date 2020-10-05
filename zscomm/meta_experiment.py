@@ -7,14 +7,14 @@ import uuid
 from .play_game import play_game
 
 
-def test_game(teacher, student, generate_test_batch, num_tests=5):
+def test_game(teacher, student, generate_test_batch, num_tests=5, **zs_play_kwargs):
     games_played = []
     for _ in range(num_tests):
         inputs, targets = generate_test_batch()
         outputs = play_game(
             inputs, teacher, student, 
             training=False, 
-            p_mutate=0
+            **zs_play_kwargs
         )
         games_played.append((inputs, targets, outputs))
     return games_played
@@ -44,20 +44,23 @@ def export_experiment(experiment, location):
     
 def measure_zero_shot_coordination(experiment_1,
                                    experiment_2,
-                                   num_tests=5):
+                                   num_tests=5, 
+                                   **zs_play_kwargs):
     
     results = []
     games_played = test_game(experiment_1.teacher, 
                              experiment_2.student,
                              experiment_1.generate_test_batch,
-                             num_tests=num_tests)
+                             num_tests=num_tests,
+                             **zs_play_kwargs)
     test_metrics = experiment_1.extract_test_metrics(games_played)
     results.append(test_metrics)
 
     games_played = test_game(experiment_2.teacher, 
                              experiment_1.student,
                              experiment_1.generate_test_batch,
-                             num_tests=num_tests)
+                             num_tests=num_tests,
+                             **zs_play_kwargs)
     test_metrics = experiment_1.extract_test_metrics(games_played)
     results.append(test_metrics)
     

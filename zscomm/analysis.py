@@ -54,14 +54,14 @@ def create_mean_index_message_map(games_played):
         [item['message_from_teacher'] for item in history[:-1]]
         for *_, (_, history) in games_played
     ], axis=0)
-    num_ts, num_msgs, chan_size = tf.shape(messages)
-    messages = tf.reshape(messages, (num_ts*num_msgs, chan_size))
+    num_ts, batch_size, chan_size = tf.shape(messages)
+    messages = tf.reshape(messages, (num_ts*batch_size, chan_size))
 
     time_step_indices = tf.concat([
-        [BATCH_SIZE * [i] for i, _ in enumerate(history[:-1])]
+        [int(batch_size) * [i] for i, _ in enumerate(history[:-1])]
         for *_, (_, history) in games_played
     ], axis=0)
-    time_step_indices = tf.reshape(time_step_indices, (num_ts*num_msgs,))
+    time_step_indices = tf.reshape(time_step_indices, (num_ts*batch_size,))
     time_step_indices = tf.cast(time_step_indices, tf.int64)
 
     num_indices = tf.reduce_max(time_step_indices) + 1

@@ -13,7 +13,7 @@ class Agent(tf.keras.Model):
         encoder=None,
         output_activation=None,
         unknown_class=False,
-        dropout_prob=0,
+        dropout_prob=0.2,
         **kwargs
     ):
         super(Agent, self).__init__(name=name, **kwargs)
@@ -27,7 +27,7 @@ class Agent(tf.keras.Model):
             tf.keras.layers.Lambda(lambda x: x)
         
         self.dense1 = tf.keras.layers.Dense(
-            dense_dim, activation='relu'
+            dense_dim, activation=None
         )
         
         self.lstm = tf.keras.layers.LSTM(

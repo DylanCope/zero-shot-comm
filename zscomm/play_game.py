@@ -55,13 +55,23 @@ def maybe_mutate_message(
     return mutated_message, mask
 
 
-def create_permutation_map(batch_size, channel_size):
+def create_permutation_map(batch_size, channel_size, permutation_subset_size):
 
+    permutation_subset_size = permutation_subset_size or channel_size
+    
     indices_col = []
     for i in range(batch_size):
-        idxs = list(range(channel_size))
-        random.shuffle(idxs)
-        indices_col.append(idxs)
+        all_symbols = list(range(channel_size))
+        inputs = random.sample(all_symbols, permutation_subset_size)
+        outputs = inputs.copy()
+        random.shuffle(outputs)
+
+        mapping = all_symbols
+        for i, o in zip(inputs, outputs):
+            mapping[i] = o
+
+        indices_col.append(mapping)
+    
     indices_col = tf.convert_to_tensor(indices_col)
 
     indices_row = tf.repeat([list(range(batch_size))], channel_size, axis=0)
@@ -75,13 +85,14 @@ def create_permutation_map(batch_size, channel_size):
 def apply_permutation(permutation_map, message):
     return tf.gather_nd(message, permutation_map)
     
-    
+
 def play_game(
     inputs, teacher, student, 
     comm_channel=None, 
     p_mutate=0.5,
     kind_mutations=True,
     message_permutation=False,
+    permutation_subset_size=None,
     channel_size=5,
     channel_temp=1,
     channel_noise=0.5,
@@ -102,7 +113,8 @@ def play_game(
     
     if message_permutation:
         permutation_map = create_permutation_map(batch_size, 
-                                                 comm_channel.size)
+                                                 comm_channel.size,
+                                                 permutation_subset_size)
     else:
         permutation_map = None
 

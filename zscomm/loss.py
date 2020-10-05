@@ -157,10 +157,9 @@ def combined_loss_fn2(outputs, targets, w=0.5):
     return w * loss_s + (1 - w) * loss_t
 
 
-def complete_loss_fn(outputs, targets, 
-                     w1=1.0, w2=3.0, w3=1.0):
-    loss = w1 * teacher_test_message_is_correct(outputs, targets)
-#     loss = loss + protocol_diversity_loss(outputs)
-    loss = loss + w2 * protocol_entropy(outputs)
-    loss = loss + w3 * student_pred_matches_implied_class(outputs, targets)
+def complete_loss_fn(outputs, targets):
+    loss = teacher_test_message_is_correct(outputs, targets)
+    loss = loss + protocol_diversity_loss(outputs)
+#     loss = loss + w2 * protocol_entropy(outputs)
+    loss = loss + student_pred_matches_implied_class(outputs, targets)
     return loss
