@@ -2,19 +2,19 @@ import numpy as np
 import tensorflow as tf
 
 
-def make_map(label, message, num_classes):
+def make_map(label, message, num_rows):
     *_, msg_size = tf.shape(message)
-    lm_map_shape = (num_classes, msg_size)
-    class_indices = list(range(num_classes))
-    indices = tf.reshape(tf.repeat(class_indices, msg_size), 
-                         lm_map_shape)
+    map_shape = (num_rows, msg_size)
+    label_indices = list(range(num_rows))
+    indices = tf.reshape(tf.repeat(label_indices, msg_size), 
+                         map_shape)
     indices = tf.cast(indices, tf.int64) == label
     return message * tf.cast(indices, tf.float32)
 
 
 def create_mean_class_message_map(games_played):
     """
-    The mean label-message map is a representation of the 
+    The mean class-message map is a representation of the 
     communication protocol being used for the test messages 
     being sent by the teacher. Each row correponds with a 
     class, each column corresponds with a symbol
@@ -24,7 +24,7 @@ def create_mean_class_message_map(games_played):
         for *_, (_, history) in games_played
     ], axis=0)
     
-    labels = tf.concat([
+    cls_labels = tf.concat([
         tf.argmax(targets[-1], axis=-1) 
         for _, targets, _ in games_played
     ], axis=0)
@@ -32,15 +32,50 @@ def create_mean_class_message_map(games_played):
     *_, num_classes = tf.shape(games_played[0][1])
     *_, msg_size = tf.shape(messages)
     
-    lm_map = tf.zeros((num_classes, msg_size))
-    for label, message in zip(labels, messages):
-        lm_map = lm_map + make_map(label, message, num_classes)
+    cm_map = tf.zeros((num_classes, msg_size))
+    for cls_label, message in zip(cls_labels, messages):
+        cm_map = cm_map + make_map(cls_label, message, num_classes)
 
-    row_totals = tf.reduce_sum(lm_map, axis=1)
+    row_totals = tf.reduce_sum(cm_map, axis=1)
     row_totals = tf.repeat(row_totals, msg_size)
-    row_totals = tf.reshape(row_totals, tf.shape(lm_map))
+    row_totals = tf.reshape(row_totals, tf.shape(cm_map))
 
-    return lm_map / row_totals
+    return cm_map / row_totals
+
+
+def create_mean_index_message_map(games_played):
+    """
+    The mean index-message map is a representation of the 
+    intraepisodic communication protocol being generated 
+    by the teacher. Each row correponds with a 
+    time step index, each column corresponds with a symbol
+    """
+    messages = tf.concat([
+        [item['message_from_teacher'] for item in history[:-1]]
+        for *_, (_, history) in games_played
+    ], axis=0)
+    num_ts, num_msgs, chan_size = tf.shape(messages)
+    messages = tf.reshape(messages, (num_ts*num_msgs, chan_size))
+
+    time_step_indices = tf.concat([
+        [BATCH_SIZE * [i] for i, _ in enumerate(history[:-1])]
+        for *_, (_, history) in games_played
+    ], axis=0)
+    time_step_indices = tf.reshape(time_step_indices, (num_ts*num_msgs,))
+    time_step_indices = tf.cast(time_step_indices, tf.int64)
+
+    num_indices = tf.reduce_max(time_step_indices) + 1
+    *_, msg_size = tf.shape(messages)
+    
+    im_map = tf.zeros((num_indices, msg_size))
+    for idx, message in zip(time_step_indices, messages):
+        im_map = im_map + make_map(idx, message, num_indices)
+
+    row_totals = tf.reduce_sum(im_map, axis=1)
+    row_totals = tf.repeat(row_totals, msg_size)
+    row_totals = tf.reshape(row_totals, tf.shape(im_map))
+
+    return im_map / row_totals
 
 
 def compute_confusion_matrix(games_played):

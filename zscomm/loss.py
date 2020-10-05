@@ -1,11 +1,17 @@
 import tensorflow as tf
+import tensorflow_probability as tfp
 from tensorflow.keras.losses import categorical_crossentropy as cce
-from tensorflow.keras.losses import kullback_leibler_divergence as kl_divergence
 
 
 def get_sent_messages(history):
     return tf.convert_to_tensor([
         item['message_from_teacher'] for item in history
+    ])
+
+
+def get_sent_utterances(history):
+    return tf.convert_to_tensor([
+        item['teacher_utterance'] for item in history
     ])
 
 
@@ -46,6 +52,7 @@ def get_expected_student_pred(outputs, targets):
     idx_num = tf.cast(idx, tf.float32) 
     row_sum = tf.reduce_sum(idx_num, axis=-1)
     row_sum = tf.reshape(row_sum, (batch_size, 1))
+    # identify where 
     dont_know = row_sum == 0.0
 
     protocol_labels = tf.transpose(tf.argmax(targets[:-1], axis=-1))
@@ -95,6 +102,37 @@ def protocol_diversity_loss(outputs):
     return tf.reduce_max(tf.reduce_sum(protocol, axis=-2), axis=-1)
 
 
+def protocol_entropy(outputs, beta=5):
+    _, history = outputs
+    messages = get_sent_messages(history)
+
+    num_msgs, batch_size, channel_size = tf.shape(messages)
+
+    # arrange protocol matrix columns into rows across 
+    # all batches - will be reshaped back later
+    protocol_msgs = messages[:-1, :, :]
+    protocol_msgs = tf.einsum('ijk->jki', protocol_msgs)
+    num_classes = protocol_msgs.shape[-1]
+    new_shape = (batch_size*channel_size, num_classes)
+    protocol_msgs = tf.reshape(protocol_msgs, new_shape)
+
+    # normalise matrix columns - terminology is backwards because
+    # tfp expects each row to be a distribution so the 
+    # protocol matrix is transposed
+    row_sums = tf.reduce_sum(protocol_msgs, axis=-1)
+    row_sums = tf.reshape(row_sums, (tf.shape(row_sums)[0], 1))
+    row_sums = tf.repeat(row_sums, num_classes, axis=-1)
+
+    eps = 1e-15 # small value to avoid div by zero 
+    probs = eps + protocol_msgs / (row_sums + eps)
+
+    entropy = cce(probs, probs)
+    entropy = tf.reshape(entropy, (batch_size, channel_size))
+    entropy = tf.reduce_sum(entropy**beta, axis=-1)
+
+    return entropy
+
+
 def combined_loss_fn(outputs, targets, w=0.5):
     """
     params:
@@ -119,8 +157,10 @@ def combined_loss_fn2(outputs, targets, w=0.5):
     return w * loss_s + (1 - w) * loss_t
 
 
-def complete_loss_fn(outputs, targets):
-    loss = teacher_test_message_is_correct(outputs, targets)
-    loss = loss + protocol_diversity_loss(outputs)
-    loss = loss + student_pred_matches_implied_class(outputs, targets)
+def complete_loss_fn(outputs, targets, 
+                     w1=1.0, w2=3.0, w3=1.0):
+    loss = w1 * teacher_test_message_is_correct(outputs, targets)
+#     loss = loss + protocol_diversity_loss(outputs)
+    loss = loss + w2 * protocol_entropy(outputs)
+    loss = loss + w3 * student_pred_matches_implied_class(outputs, targets)
     return loss

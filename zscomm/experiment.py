@@ -183,9 +183,17 @@ class Experiment:
         mean_protocol_diversity = \
             float(mean_protocol_diversity.numpy().mean())
         
+        mean_protocol_entropy = tf.reduce_mean([
+            protocol_entropy(outputs)
+            for _, targets, outputs in games_played
+        ])
+        mean_protocol_entropy = \
+            float(mean_protocol_entropy.numpy().mean())
+        
         return {
             'mean_teacher_error': mean_teacher_error,
             'mean_protocol_diversity': mean_protocol_diversity,
+            'mean_protocol_entropy': mean_protocol_entropy,
         }
     
     def extract_test_metrics(self, games_played):
@@ -322,7 +330,8 @@ class Experiment:
             f"Ground Truth F1-Score: {round(metrics['mean_ground_truth_f1'], 3)},",
             f"Student Error: {round(metrics['mean_student_error'], 3)},",
             f"Teacher Error: {round(metrics['mean_teacher_error'], 3)},",
-            f"Protocol Diversity: {round(metrics['mean_protocol_diversity'], 3)},"
+            f"Protocol Diversity: {round(metrics['mean_protocol_diversity'], 3)},",
+            f"Protocol Entropy: {round(metrics['mean_protocol_entropy'], 3)},"
         )
     
     def print_results(self):

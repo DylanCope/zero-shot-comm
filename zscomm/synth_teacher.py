@@ -1,6 +1,8 @@
 from .play_game import maybe_mutate_message
 from .loss import get_correct_teacher_msg
 
+import numpy as np
+
 
 class SyntheticTeacher:
     
@@ -32,6 +34,7 @@ class SyntheticTeacher:
         state = history
         
         # utterances are logits not probabilities
-        utt = 1000*utt
+        eps = 1e-15
+        utt = np.log(utt + eps)
         
         return utt, None, state 
