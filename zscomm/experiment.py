@@ -209,7 +209,7 @@ class Experiment:
             **student_metrics, **teacher_metrics
         }
     
-    def test_play(self, inputs):
+    def test_play(self, inputs, override_play_params=None):
         
         student = self.student or \
             mock.MagicMock(return_value=(None, None, None))
@@ -218,11 +218,13 @@ class Experiment:
                              self.num_classes, 
                              targets)
         
+        play_params = override_play_params or self.get_play_params()
+        
         return play_game(inputs, teacher, student, 
                          training=False,
-                         **self.get_play_params())
+                         **play_params)
         
-    def run_tests(self):
+    def run_tests(self, override_play_params=None):
         
         test_samples = [
             self.generate_test_batch()
@@ -230,7 +232,7 @@ class Experiment:
         ]
 
         games_played = [
-            (inp, tar, self.test_play(inp))
+            (inp, tar, self.test_play(inp, override_play_params))
             for inp, tar in test_samples
         ]
 
@@ -281,7 +283,16 @@ class Experiment:
             self.print_history()
             clear_output(wait=True)
 
-        self.results = self._test_step()
+        vanilla_params = {
+            'p_mutate': 0, 'message_permutation': False,
+            **self.get_play_params()
+        }
+        _, vanilla_test_metrics = self.run_tests(vanilla_params)
+        
+        self.results = {
+            'training_params_results': self._test_step(),
+            'vanilla_params_results': vanilla_test_metrics
+        }
     
     def run(self, catch_interrupt=True):
         self.print_history()

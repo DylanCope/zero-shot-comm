@@ -7,14 +7,15 @@ import uuid
 from .play_game import play_game
 
 
-def test_game(teacher, student, generate_test_batch, num_tests=5, **zs_play_kwargs):
+def test_game(teacher, student, generate_test_batch, 
+              num_tests=5, **play_kwargs):
     games_played = []
     for _ in range(num_tests):
         inputs, targets = generate_test_batch()
         outputs = play_game(
             inputs, teacher, student, 
             training=False, 
-            **zs_play_kwargs
+            **play_kwargs
         )
         games_played.append((inputs, targets, outputs))
     return games_played
@@ -184,12 +185,17 @@ class MetaExperiment:
             e1 = item_1['experiment']
             e2 = item_2['experiment']
             
-            test_metrics = measure_zero_shot_coordination(e1, e2)
+            vanilla_params_test_metrics = measure_zero_shot_coordination(
+                e1, e2, **{'p_mutate': 0, 'message_permutation': False}
+            )
+            training_params_test_metrics = measure_zero_shot_coordination(
+                e1, e2, **e1.get_play_kwargs()
+            )
             
-            results.extend([
-                metric['mean_ground_truth_f1']
-                for metric in test_metrics
-            ])
+            results.append({
+                'vanilla_params_test_metrics': vanilla_params_test_metrics,
+                'training_params_test_metrics': training_params_test_metrics,
+            })
 
         return results
     
