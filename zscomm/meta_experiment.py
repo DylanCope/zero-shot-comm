@@ -2,7 +2,6 @@ from IPython.display import clear_output
 from itertools import combinations
 import json
 from pathlib import Path
-import uuid
 
 from .play_game import play_game
 
@@ -113,12 +112,17 @@ class MetaExperiment:
                 item['experiment'].print_results()
         for item in self.experiments:
             if item['status'] == 'In Progress':
-                print(f"Running experiment {item['index']}", 
+                print(f"Running experiment {item['index'] + 1}", 
                       f'({num_complete}/{self.num_experiments} complete):')
                 break
                 
     def print_results(self):
-        print(self.name, 'results: ', self.results)
+        zs_results = [
+            metrics['mean_ground_truth_f1']
+            for stranger_pairings in self.results
+            for metrics in stranger_pairings['vanilla_params_test_metrics']
+        ]
+        print(self.name, 'results: ', zs_results)
 
     def is_finished(self):
         return all([
@@ -165,8 +169,9 @@ class MetaExperiment:
         
     def export_experiment(self, experiment):
         if self.export_location is not None:
-            folder = str(uuid.uuid4())
-            location = f'{self.export_location}/{folder}'
+            folders = list(Path(self.export_location).glob('*'))
+            folder_name = int(len(folders)) + 1
+            location = f'{self.export_location}/{folder_name}'
             export_experiment(experiment, location)
     
     def _get_results(self):
@@ -189,7 +194,7 @@ class MetaExperiment:
                 e1, e2, **{'p_mutate': 0, 'message_permutation': False}
             )
             training_params_test_metrics = measure_zero_shot_coordination(
-                e1, e2, **e1.get_play_kwargs()
+                e1, e2, **e1.get_play_params()
             )
             
             results.append({

@@ -346,7 +346,9 @@ class Experiment:
         )
     
     def print_results(self):
-        self.print_test_metrics(self.results)
+        for k, test_metrics in self.results.items():
+            print(k)
+            self.print_test_metrics(test_metrics)
 
     def print_history(self):
         self.print_prehistory()
