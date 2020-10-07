@@ -92,7 +92,7 @@ class VaryPlayParamExperiment(MetaExperiment):
             param_val = play_params[self.param_name]
         
         elif self.param_name in metadata:
-            p_mutate = metadata[self.param_name]
+            param_val = metadata[self.param_name]
         
         i, *_ = [i for i, item in enumerate(self.experiments)
                  if item[self.param_name] == param_val]

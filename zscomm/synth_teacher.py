@@ -24,7 +24,6 @@ class SyntheticTeacher:
         
         if len(history) < self.num_classes:
             utt, _ = maybe_mutate_message(prev_utt,
-                                          self.channel_size,
                                           history,
                                           p_mutate=1)
         else:

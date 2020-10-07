@@ -90,7 +90,9 @@ class Experiment:
             mock.MagicMock(return_value=(None, None, None))
         
         teacher = self.teacher or \
-            SyntheticTeacher(CHANNEL_SIZE, NUM_CLASSES, targets)
+            SyntheticTeacher(self.get_play_params()['channel_size'], 
+                             self.student.num_classes, 
+                             targets)
     
         with tf.GradientTape(persistent=True) as tape:
             outputs = play_game(
@@ -214,8 +216,8 @@ class Experiment:
         student = self.student or \
             mock.MagicMock(return_value=(None, None, None))
         teacher = self.teacher or \
-            SyntheticTeacher(self.channel_size, 
-                             self.num_classes, 
+            SyntheticTeacher(self.get_play_params()['channel_size'], 
+                             self.student.num_classes, 
                              targets)
         
         play_params = override_play_params or self.get_play_params()
@@ -271,6 +273,50 @@ class Experiment:
         _, test_metrics = self.run_tests()
         self.training_history[-1]['test_metrics'] = test_metrics
         return test_metrics
+    
+    def compute_teacher_responsiveness(self):
+        override_play_params = {
+            **self.get_play_params(), 'p_mutate': 1.0,
+        }
+        _, test_metrics = self.run_tests(override_play_params) 
+        teacher_error = test_metrics['mean_teacher_error']
+
+        return np.exp(-teacher_error)
+    
+    def compute_student_responsiveness(self, num_rounds=5):
+        games_played = []
+        channel_size = self.get_play_params()['channel_size']
+        for i in range(num_rounds):
+            inputs, targets = self.generate_test_batch()
+            synth = SyntheticTeacher(channel_size, 
+                                     self.student.num_classes, 
+                                     targets)
+            outputs = play_game(
+                inputs, synth, self.student,
+                p_mutate = 0.0, training=False,
+                channel_size=channel_size
+            ) 
+            games_played.append([inputs, targets, outputs])
+
+        test_metrics = self.extract_test_metrics(games_played)
+        student_error = test_metrics['mean_student_error']
+
+        return np.exp(-student_error)
+    
+    def get_results(self):
+
+        vanilla_params = {
+            **self.get_play_params(), 
+            'p_mutate': 0, 'message_permutation': False,
+        }
+        _, vanilla_test_metrics = self.run_tests(vanilla_params)
+        
+        return {
+            'training_params_results': self._test_step(),
+            'vanilla_params_results': vanilla_test_metrics,
+            'student_responsiveness': self.compute_student_responsiveness(),
+            'teacher_responsiveness': self.compute_teacher_responsiveness(),
+        }
         
     def _run_internal(self):
         while self.epoch < self.max_epochs:
@@ -282,17 +328,8 @@ class Experiment:
             self.epoch += 1
             self.print_history()
             clear_output(wait=True)
-
-        vanilla_params = {
-            'p_mutate': 0, 'message_permutation': False,
-            **self.get_play_params()
-        }
-        _, vanilla_test_metrics = self.run_tests(vanilla_params)
         
-        self.results = {
-            'training_params_results': self._test_step(),
-            'vanilla_params_results': vanilla_test_metrics
-        }
+        self.results = self.get_results()
     
     def run(self, catch_interrupt=True):
         self.print_history()
