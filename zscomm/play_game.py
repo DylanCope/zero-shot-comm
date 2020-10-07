@@ -84,7 +84,7 @@ def create_permutation_map(batch_size, channel_size, permutation_subset_size):
 
 def apply_permutation(permutation_map, message):
     return tf.gather_nd(message, permutation_map)
-    
+
 
 def play_game(
     inputs, teacher, student, 
@@ -131,11 +131,13 @@ def play_game(
         for i in range(num_inputs - 1):
             inp = inputs[i]
             
+            if access_to_inputs_in_first_phase: 
+                inp_t = inp
+            else: inp_t = no_inp
             
-            inp_t = inp \
-                if access_to_inputs_in_first_phase else no_inp
-            prev_msg_t = teacher_prev_msg \
-                if teacher_sees_their_prev_msg else silence
+            if teacher_sees_their_prev_msg:
+                prev_msg_t = teacher_prev_msg
+            else: prev_msg_t = silence
             
             teacher_inputs = (inp_t, prev_msg_t, silence)
             
@@ -176,8 +178,10 @@ def play_game(
             })
             teacher_prev_msg = message_from_teacher
 
-    prev_msg_t = teacher_prev_msg \
-        if teacher_sees_their_prev_msg else silence
+    if teacher_sees_their_prev_msg:
+        prev_msg_t = teacher_prev_msg
+    else: prev_msg_t = silence
+        
     teacher_inputs = (inputs[-1], prev_msg_t, silence)
     
     teacher_utterance, _, _ = teacher(

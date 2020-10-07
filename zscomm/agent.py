@@ -12,8 +12,9 @@ class Agent(tf.keras.Model):
         dense_dim=128,
         encoder=None,
         output_activation=None,
+        first_activation='relu',
         unknown_class=False,
-        dropout_prob=0.2,
+        dropout_prob=0.,
         **kwargs
     ):
         super(Agent, self).__init__(name=name, **kwargs)
@@ -27,11 +28,15 @@ class Agent(tf.keras.Model):
             tf.keras.layers.Lambda(lambda x: x)
         
         self.dense1 = tf.keras.layers.Dense(
-            dense_dim, activation=None
+            128, activation=first_activation
         )
         
+#         self.dense2 = tf.keras.layers.Dense(
+#             64, activation='relu'
+#         )
+        
         self.lstm = tf.keras.layers.LSTM(
-            units=lstm_units,
+            units=64,
             return_state=True,
             dropout=dropout_prob,
         )
@@ -42,10 +47,18 @@ class Agent(tf.keras.Model):
         else:
             output_size = self.channel_size + self.num_classes
         
+#         self.extract_utterance = tf.keras.layers.Dense(
+#             channel_size, activation=None
+#         )
+        
+#         self.extract_class_probs = tf.keras.layers.Dense(
+#             num_classes, activation='softmax'
+#         )
+
+        
         self.output_layer = tf.keras.layers.Dense(
             output_size, activation=output_activation
         )
-        
         self.extract_utterance = tf.keras.layers.Lambda(
             lambda x: x[:, :self.channel_size]
         )
@@ -63,6 +76,8 @@ class Agent(tf.keras.Model):
         x = self.dense1(x)
         x = self.dropout(x, training=training)
         
+#         x = self.dense2(x)
+        
         x = tf.expand_dims(x, 1) # Add time dim
         if state is None:
             state = self.lstm.get_initial_state(inputs)
@@ -70,10 +85,7 @@ class Agent(tf.keras.Model):
                               training=training)
         self.state = state
         
-#         x = self.dropout(x, training=training)
-        
-        x = self.output_layer(x, training=training)
-        
+        x = self.output_layer(x)
         utterance = self.extract_utterance(x)
         class_probs = self.extract_class_probs(x)
         
