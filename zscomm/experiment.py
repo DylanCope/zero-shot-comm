@@ -374,18 +374,22 @@ class Experiment:
     
     def print_test_metrics(self, metrics):
         print(
-            f"Test Loss: {round(metrics['mean_test_loss'], 3)},",
-            f"Ground Truth F1-Score: {round(metrics['mean_ground_truth_f1'], 3)},",
-            f"Student Error: {round(metrics['mean_student_error'], 3)},",
-            f"Teacher Error: {round(metrics['mean_teacher_error'], 3)},",
-            f"Protocol Diversity: {round(metrics['mean_protocol_diversity'], 3)},",
-            f"Protocol Entropy: {round(metrics['mean_protocol_entropy'], 3)},"
+            f"Test Loss: {round(metrics.get('mean_test_loss', np.nan), 3)},",
+            f"Ground Truth F1-Score: {round(metrics.get('mean_ground_truth_f1', np.nan), 3)},",
+            f"Student Error: {round(metrics.get('mean_student_error', np.nan), 3)},",
+            f"Teacher Error: {round(metrics.get('mean_teacher_error', np.nan), 3)},",
+            f"Protocol Diversity: {round(metrics.get('mean_protocol_diversity', np.nan), 3)},",
+            f"Protocol Entropy: {round(metrics.get('mean_protocol_entropy', np.nan), 3)},"
         )
     
     def print_results(self):
-        for k, test_metrics in self.results.items():
-            print(k)
-            self.print_test_metrics(test_metrics)
+        for k, v in self.results.items():
+            if isinstance(v, dict):
+                print(k)
+                self.print_test_metrics(v)
+            else:
+                print(k, v)
+            print()
 
     def print_history(self):
         self.print_prehistory()
@@ -394,7 +398,7 @@ class Experiment:
         for e, item in enumerate(self.training_history):
             mins = int(item['seconds_taken']) // 60
             secs = int(item['seconds_taken']) % 60
-            loss = round(item['loss'], 3)
+            loss = round(item.get('loss', np.nan), 3)
             print(f'Epoch {e}, Time Taken (mm:ss): {mins}:{secs}, Mean Loss: {loss}')
             if 'test_metrics' in item:
                 self.print_test_metrics(item['test_metrics'])

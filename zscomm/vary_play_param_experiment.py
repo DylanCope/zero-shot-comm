@@ -14,9 +14,9 @@ class VaryPlayParamExperiment(MetaExperiment):
                  param_name = 'p_mutate',
                  save_location=None, 
                  num_experiments_per_val=3,
+                 name='vary_pm_experiment',
                  **experiment_kwargs):
-        self.name = 'vary_pm_experiment'
-        
+        self.name = name        
         self.param_name = param_name
         self.num_experiments = len(param_vals)
         

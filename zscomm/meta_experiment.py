@@ -191,7 +191,10 @@ class MetaExperiment:
             e2 = item_2['experiment']
             
             vanilla_params_test_metrics = measure_zero_shot_coordination(
-                e1, e2, **{'p_mutate': 0, 'message_permutation': False}
+                e1, e2, **{
+                    **e1.get_play_params(), 
+                    'p_mutate': 0, 'message_permutation': False
+                }
             )
             training_params_test_metrics = measure_zero_shot_coordination(
                 e1, e2, **e1.get_play_params()
