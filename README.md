@@ -3,7 +3,7 @@
 This is the source code for our paper ["Learning to Communicate with Strangers via Channel Randomisation Methods" (Cope and Shoots, 2020)](https://drive.google.com/file/d/1FaBSE8jcuf6hGIbbp34Dxu7jPjh0iJl0/view) presented at the [4th NeurIPS Workshop on Emergent Communication](https://sites.google.com/view/emecom2020).
 
 <p align="center">
-  <img src="https://github.com/DylanCope/LaTex-Presentation-Learning-to-Communicate-with-Strangers/blob/main/figures/teacher_student_cartoon.png" width=625 height=392>
+  <img src="https://github.com/DylanCope/LaTex-Presentation-Learning-to-Communicate-with-Strangers/blob/main/figures/teacher_student_cartoon.png" width=417 height=261>
 </p>
 
 Check out [our poster](https://drive.google.com/file/d/1H4ub3k4omuuynarq0n-GEAYoPh7d2BZ0/view?usp=sharing) for a quick overview of the results!
