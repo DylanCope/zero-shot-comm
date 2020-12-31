@@ -27,3 +27,7 @@ There are two ways of installing and running this codebase.
 ## Citing this work
 
 Cope, Dylan R. & Schoots, Nandi (2020), 'Learning to Communicate with Strangers via Channel Randomisation Methods', *Emergent Communication Workshop at the 34th Conference on Neural Information Processing Systems* 
+
+## Acknowledgements
+
+This work was done at the [UKRI Centre for Doctoral Studies in Safe and Trusted Artificial Intelligence](safeandtrustedai.org).
