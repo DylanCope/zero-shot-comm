@@ -13,7 +13,7 @@ NUM_CLASSES = 3
 
 
 def create_message_mutation_zsc_plot(self_play_df, zs_coord_df):
-    set_plotting_style(font_scale=2.5, rc={"legend.fontsize": 15})
+    set_plotting_style(font_scale=2.5, rc={"legend.fontsize": 15}, use_times_font=False)
 
     plt.figure(figsize=(10, 6))
     ax = sns.lineplot(
