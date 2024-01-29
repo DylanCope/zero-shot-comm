@@ -37,7 +37,7 @@ class VaryPlayParamExperiment(MetaExperiment):
             }
             for i, val in enumerate(param_vals)
         ]
-        
+
         self.save_location = save_location
         if save_location is not None:
             self.load_history(save_location)
