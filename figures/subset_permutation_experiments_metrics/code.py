@@ -1,0 +1,69 @@
+from pathlib import Path
+from reproducible_figures.plotting import set_plotting_style
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+
+matplotlib.use("pdf")
+
+
+X_NAME = "Permuted Proportion"
+
+CHANNEL_SIZE = 5
+
+
+def plot_metrics_with_subset_size(zs_coord_df, responsiveness_df):
+    set_plotting_style()
+
+    plt.figure(figsize=(8, 4))
+
+    sns.lineplot(
+        x=X_NAME,
+        y="Zero-Shot Coordination Score",
+        data=zs_coord_df,
+        label="Zero-shot Performance",
+    )
+    sns.lineplot(
+        x=X_NAME,
+        y="Teacher Responsiveness",
+        data=responsiveness_df,
+        label="Teacher Responsiveness",
+    )
+    sns.lineplot(
+        x=X_NAME,
+        y="Student Responsiveness",
+        data=responsiveness_df,
+        label="Student Responsiveness",
+    )
+    sns.lineplot(
+        x=X_NAME, y="Protocol Diversity", data=zs_coord_df, label="Protocol Diversity"
+    )
+
+    plt.ylim([-0.05, 1.05])
+
+    plt.xlim([1.95, CHANNEL_SIZE + 0.05])
+    # plt.title('The Effect of Channel Permutation on Zero-Shot Coordination')
+    plt.ylabel("")
+    plt.xlabel("Subset Size")
+    plt.xticks(pd.unique(zs_coord_df[X_NAME]))
+
+
+def reproduce_figure():
+    data = [
+        pd.read_csv(csv_path)
+        for csv_path in Path("figures/subset_permutation_experiments_metrics").glob(
+            "data_*.csv"
+        )
+    ]
+    plot_metrics_with_subset_size(*data)
+    plt.savefig(
+        "figures/subset_permutation_experiments_metrics/subset_permutation_experiments_metrics.pdf",
+        bbox_inches="tight",
+        dpi=1000,
+    )
+
+
+if __name__ == "__main__":
+    reproduce_figure()
