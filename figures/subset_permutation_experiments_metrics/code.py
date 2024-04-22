@@ -15,9 +15,11 @@ CHANNEL_SIZE = 5
 
 
 def plot_metrics_with_subset_size(zs_coord_df, responsiveness_df):
-    set_plotting_style()
+    # set_plotting_style()
+    set_plotting_style(font_scale=2.5, rc={"legend.fontsize": 15})
 
-    plt.figure(figsize=(8, 4))
+    # plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(10, 6))
 
     sns.lineplot(
         x=X_NAME,
@@ -38,8 +40,35 @@ def plot_metrics_with_subset_size(zs_coord_df, responsiveness_df):
         label="Student Responsiveness",
     )
     sns.lineplot(
-        x=X_NAME, y="Protocol Diversity", data=zs_coord_df, label="Protocol Diversity"
+        x=X_NAME, y="Protocol Diversity",
+        data=zs_coord_df, label="Protocol Diversity"
     )
+
+    sns.scatterplot(
+        x=X_NAME,
+        y="Zero-Shot Coordination Score",
+        data=zs_coord_df.groupby(X_NAME).mean(),
+        # label="Zero-shot Performance",
+    )
+    sns.scatterplot(
+        x=X_NAME,
+        y="Teacher Responsiveness",
+        data=responsiveness_df.groupby(X_NAME).mean(),
+        # label="Teacher Responsiveness",
+    )
+    sns.scatterplot(
+        x=X_NAME,
+        y="Student Responsiveness",
+        data=responsiveness_df.groupby(X_NAME).mean(),
+        # label="Student Responsiveness",
+    )
+    sns.scatterplot(
+        x=X_NAME,
+        y="Protocol Diversity",
+        data=zs_coord_df.groupby(X_NAME).mean(),
+        # label="Protocol Diversity"
+    )
+
 
     plt.ylim([-0.05, 1.05])
 
