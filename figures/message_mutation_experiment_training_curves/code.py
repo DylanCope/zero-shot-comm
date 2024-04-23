@@ -12,7 +12,7 @@ matplotlib.use("pdf")
 def plot_message_mutation_experiment_training_curves(history_df):
     set_plotting_style(font_scale=2.5)
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 6))
 
     norm = plt.Normalize(0, 1)
     sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
