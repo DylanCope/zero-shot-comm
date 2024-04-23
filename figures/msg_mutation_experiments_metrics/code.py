@@ -72,7 +72,7 @@ def plot_metrics_with_p_mutate(zs_coord_df, responsiveness_df):
     # plt.title('The Effect of Channel Permutation on Zero-Shot Coordination')
     plt.ylabel("")
     plt.xlabel("Mutation Probability")
-    plt.xticks(pd.unique(zs_coord_df[X_NAME]))
+    # plt.xticks(pd.unique(zs_coord_df[X_NAME]))
 
 
 def reproduce_figure():
