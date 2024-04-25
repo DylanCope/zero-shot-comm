@@ -64,7 +64,7 @@ def create_mean_index_message_map(games_played):
     time_step_indices = tf.reshape(time_step_indices, (num_ts*batch_size,))
     time_step_indices = tf.cast(time_step_indices, tf.int64)
 
-    num_indices = tf.reduce_max(time_step_indices) + 1
+    num_indices = tf.cast(tf.reduce_max(time_step_indices) + 1, tf.int32)
     *_, msg_size = tf.shape(messages)
     
     im_map = tf.zeros((num_indices, msg_size))
