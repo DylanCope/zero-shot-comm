@@ -20,7 +20,8 @@ def plot_game(inputs, outputs, targets,
               show_utterances=True,
               use_mnist=False,
               fig_width=3,
-              fig_height=5):
+              fig_height=5,
+              show=True):
     """
     Assuming that there is a batch of games, this will only plot
     the first one in the batch
@@ -31,7 +32,7 @@ def plot_game(inputs, outputs, targets,
         student_loss = student_pred_matches_implied_class(outputs, targets)
         teacher_loss = student_pred_matches_test_class(outputs, targets)
     else:
-        teacher_loss = teacher_only_loss_fn(outputs, targets)
+        teacher_loss = teacher_test_message_is_correct(outputs, targets)
     
     _, _, num_classes = tf.shape(targets)
     num_classes = int(num_classes)
@@ -148,4 +149,6 @@ def plot_game(inputs, outputs, targets,
         ax.set_xlabel('Class');  ax.set_ylabel('')
     
     plt.tight_layout()
-    plt.show()
+    
+    if show:
+        plt.show()
